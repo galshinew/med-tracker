@@ -5,6 +5,10 @@ const fs = require("fs");
 app.commandLine.appendSwitch("lang", "en-GB"); // 24-hour clock for times
 app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required"); // reminder sound may autoplay
 
+/* Only one instance may run, so a reminder never fires twice at once. */
+const gotTheLock = app.requestSingleInstanceLock();
+if(!gotTheLock){ app.quit(); }
+
 let mainWindow = null;
 
 function storePath(name) {
@@ -54,7 +58,16 @@ function createWindow() {
   mainWindow.on("closed", () => { mainWindow = null; });
 }
 
+app.on("second-instance", () => {
+  if(mainWindow){
+    if(mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  }
+});
+
 app.whenReady().then(() => {
+  if(!gotTheLock) return;
   app.setAppUserModelId("com.medtracker.app");
   createWindow();
 

@@ -563,6 +563,9 @@ function stopReminderSound(){
 
 /* In-memory only (no browser storage): keys already shown this session. */
 const _notified = {};
+/* Keys the user dismissed with "Stop" today, so a reminder never re-appears
+   for the same dose the rest of the day (even if the time is edited). */
+const _dismissed = {};
 
 function checkReminders(){
   if(!state.settings.remindersEnabled) return;
@@ -576,6 +579,7 @@ function checkReminders(){
   for(const e of entries){
     const rem = reminderTimeFor(e);
     if(!rem) continue;
+    if(_dismissed[key + ":" + e.id]) continue;
     const rec = state.data[key] && state.data[key][e.id];
     if(rec && rec.taken) continue;
     /* Key by day + entry + the reminder time so that changing the time
@@ -622,6 +626,7 @@ function renderReminderAlert(){
 
 function hideReminderAlert(){
   stopReminderSound();
+  _alertEntries.slice().forEach(function(e){ _dismissed[(e.key || todayKey()) + ":" + e.id] = 1; });
   _alertEntries = [];
   const ov = $("#reminderAlert");
   if(ov){ ov.hidden = true; ov.classList.remove("open"); }

@@ -263,6 +263,18 @@ assert(t('nav.today') === 'Today', 'English restored');
   assert(takenFor('2026-09-17', 'm-pm') === true, 'acknowledge marks the dose taken');
   assert(getEl('#reminderAlert').hidden === true, 'acknowledge closes the popup');
   setTaken('2026-09-17', 'm-pm', false);
+
+  // Pressing Stop stays quiet for that dose the rest of the day
+  for (const k in _notified) delete _notified[k];
+  for (const k in _dismissed) delete _dismissed[k];
+  state.settings.reminders = { morning: '08:00', evening: '08:00', sunday: '08:00' };
+  const before = notifs;
+  withClock(8, 0, () => checkReminders());
+  assert(notifs === before + 2, 'fires at 08:00');
+  hideReminderAlert(); // press Stop
+  state.settings.reminders = { morning: '09:00', evening: '09:00', sunday: '09:00' };
+  withClock(9, 0, () => checkReminders());
+  assert(notifs === before + 2, 'after Stop it never re-fires that day');
   state.settings.remindersEnabled = false;
 })();
 
