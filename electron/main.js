@@ -1,5 +1,4 @@
-const { app, BrowserWindow, Notification, ipcMain, shell } = require("electron");
-const path = require("path");
+const { app, BrowserWindow, ipcMain, shell } = require("electron");
 const fs = require("fs");
 
 app.commandLine.appendSwitch("lang", "en-GB"); // 24-hour clock for times
@@ -100,23 +99,9 @@ ipcMain.on("store:save-config", (_event, text) => {
   catch (e) { console.error("[store:save-config]", e); }
 });
 
-ipcMain.on("notify", (_event, payload) => {
-  const { title, body } = payload || {};
-  if (!Notification.isSupported()) return;
-  const n = new Notification({
-    title: title || "Med Tracker",
-    body: body || "",
-    icon: path.join(__dirname, "..", "public", "icons", "icon-512.png")
-  });
-  n.on("click", () => {
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.show();
-      mainWindow.focus();
-    }
-  });
-  n.show();
-  // Draw attention to the app window (without stealing focus) so the reminder popup is seen.
+ipcMain.on("notify", () => {
+  // No Windows toast/balloon: the app shows its own popup + plays the sound.
+  // Just flash the taskbar (without stealing focus) so a background window is noticed.
   if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isFocused()) {
     try { mainWindow.flashFrame(true); } catch (e) {}
     const stopFlash = () => { try { mainWindow.flashFrame(false); } catch (e) {} };
