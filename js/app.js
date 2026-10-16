@@ -609,7 +609,7 @@ function wire(){
     if(!desktopBridge) writeHashConfig();
     state.updatedAt = new Date().toISOString();
     persistLocal();
-    if(hasCreds()) syncOnLoad();
+    if(hasCreds()){ syncOnLoad(); startPolling(); }
     $("#syncStatus").textContent = t("sync.settingsSaved");
     render();
     checkReminders();
@@ -789,6 +789,45 @@ function pushRemote(tracker){
   }, 800);
 }
 
+/* Poll GitHub so changes made on another device appear without a reload. */
+let _pollTimer = null;
+let _polling = false;
+async function pollRemote(){
+  if(_polling || !hasCreds()) return;
+  try { if(typeof document !== "undefined" && document.hidden) return; } catch(e){}
+  _polling = true;
+  try {
+    const res = await githubGet();
+    if(res && res.content){
+      const remote = JSON.parse(b64decode(res.content));
+      const remoteTs = (remote && remote.updatedAt) || "";
+      if(remoteTs && remoteTs > (state.updatedAt || "")){
+        applyStore({ data: remote.data, settings: remote.settings, config: state.config, updatedAt: remote.updatedAt });
+        initLang(state.settings.language);
+        applyLang();
+        applyTheme(state.config.theme, false);
+        loadSettingsUI();
+        syncLangSeg();
+        render();
+        if(openDayKey) renderDayEditor(openDayKey);
+        persistLocal();
+      }
+    }
+  } catch(e){ /* offline or file not created yet */ }
+  _polling = false;
+}
+
+function startPolling(){
+  if(_pollTimer || !hasCreds()) return;
+  _pollTimer = setInterval(pollRemote, 10000);
+  if(typeof document !== "undefined" && document.addEventListener){
+    document.addEventListener("visibilitychange", function(){ if(!document.hidden) pollRemote(); });
+  }
+  if(typeof window !== "undefined" && window.addEventListener){
+    window.addEventListener("focus", function(){ pollRemote(); });
+  }
+}
+
 /* On startup reconcile with GitHub; the newer of the two files wins ("last edit wins"). */
 async function syncOnLoad(){
   if(!hasCreds()) return;
@@ -827,3 +866,4 @@ syncLangSeg();
 render();
 positionInk();
 syncOnLoad();
+startPolling();
