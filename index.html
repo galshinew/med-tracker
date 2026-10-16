@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://api.github.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#f3f3f3">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="public/icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/i18n.js"></script>
+  <title>Med Tracker</title>
+</head>
+<body>
+  <header class="appbar">
+    <div class="brand">
+      <span class="brand-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.5 20.5a5 5 0 0 1-7-7l6-6a5 5 0 0 1 7 7z"></path>
+          <path d="M8.5 8.5l7 7"></path>
+        </svg>
+      </span>
+      <span class="brand-title" data-i18n="app.title">Med Tracker</span>
+    </div>
+    <div class="appbar-actions">
+      <button id="btnTheme" class="icon-btn" title="Toggle light / dark" aria-label="Toggle theme" data-i18n-title="app.theme" data-i18n-aria="app.theme"></button>
+    </div>
+  </header>
+
+  <nav class="pivot">
+    <button class="pivot-item active" data-tab="today" data-i18n="nav.today">Today</button>
+    <button class="pivot-item" data-tab="history" data-i18n="nav.history">History</button>
+    <button class="pivot-item" data-tab="settings" data-i18n="nav.settings">Settings</button>
+    <span class="pivot-ink" id="pivotInk"></span>
+  </nav>
+
+  <main class="content">
+    <section id="tab-today" class="tab active">
+      <div id="scheduleList" class="list"></div>
+      <h2 class="section-title" data-i18n="today.last7">Last 7 days</h2>
+      <div id="historyMain" class="list"></div>
+    </section>
+
+    <section id="tab-history" class="tab">
+      <div id="stats" class="stats"></div>
+      <h2 class="section-title" data-i18n="history.last30">Last 30 days</h2>
+      <p class="section-sub" data-i18n="history.sub">Your full history, most recent first.</p>
+      <div id="history" class="list"></div>
+    </section>
+
+    <section id="tab-settings" class="tab">
+      <section class="card settings-card">
+        <h3 data-i18n="settings.language">Language</h3>
+        <p class="row-sub" data-i18n="settings.languageSub">Choose the language for the app.</p>
+        <div id="langSeg" class="seg" role="group">
+          <button type="button" class="seg-item" data-lang="en">English</button>
+          <button type="button" class="seg-item" data-lang="he">&#1506;&#1489;&#1512;&#1497;&#1514;</button>
+        </div>
+      </section>
+
+      <section class="card settings-card">
+        <h3 data-i18n="settings.reminders">Reminders</h3>
+        <div class="toggle-row">
+          <div>
+            <div class="row-title" data-i18n="settings.reminders">Reminders</div>
+            <div class="row-sub" data-i18n="settings.remindersSub">Get notified when a dose is due</div>
+          </div>
+          <label class="switch">
+            <input id="remEnabled" type="checkbox">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="field">
+          <label for="remMorning" data-i18n="settings.morning">Morning</label>
+          <input id="remMorning" type="time" value="08:00">
+        </div>
+        <div class="field">
+          <label for="remEvening" data-i18n="settings.evening">Evening</label>
+          <input id="remEvening" type="time" value="20:00">
+        </div>
+        <div class="field">
+          <label for="remSunday" data-i18n="settings.sunday">Sunday (Medsion)</label>
+          <input id="remSunday" type="time" value="09:00">
+        </div>
+        <button id="btnEnableNotif" class="btn" data-i18n="settings.enableNotif">Enable notifications</button>
+      </section>
+
+      <section class="card settings-card">
+        <h3 data-i18n="settings.github">GitHub sync</h3>
+        <p class="row-sub" data-i18n="settings.githubSub">Back up and sync your data with your own private GitHub repository.</p>
+        <div class="field">
+          <label for="ghOwner" data-i18n="settings.owner">Repo owner</label>
+          <input id="ghOwner" type="text" data-i18n-ph="settings.ownerPh" placeholder="your-github-username">
+        </div>
+        <div class="field">
+          <label for="ghRepo" data-i18n="settings.repo">Repo name</label>
+          <input id="ghRepo" type="text" data-i18n-ph="settings.repoPh" placeholder="med-tracker-data">
+        </div>
+        <div class="field">
+          <label for="ghToken" data-i18n="settings.token">Access token (classic, repo scope)</label>
+          <input id="ghToken" type="password" placeholder="ghp_...">
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="ghPath" data-i18n="settings.path">File path</label>
+            <input id="ghPath" type="text" value="data/tracker.json">
+          </div>
+          <div class="field">
+            <label for="ghBranch" data-i18n="settings.branch">Branch</label>
+            <input id="ghBranch" type="text" value="main">
+          </div>
+        </div>
+        <input id="tz" type="hidden" value="">
+        <div class="btn-row">
+          <button id="btnSaveSettings" class="btn primary" data-i18n="settings.save">Save settings</button>
+          <button id="btnTestSync" class="btn" data-i18n="settings.test">Test connection</button>
+          <button id="btnPull" class="btn" data-i18n="settings.pull">Pull</button>
+          <button id="btnPush" class="btn" data-i18n="settings.push">Push</button>
+        </div>
+        <div id="syncStatus" class="status"></div>
+      </section>
+    </section>
+  </main>
+
+  <div id="dayEditor" class="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="dayEditorTitle">
+      <div class="modal-head">
+        <div>
+          <div id="dayEditorTitle" class="modal-title" data-i18n="modal.day">Day</div>
+          <div id="dayEditorSub" class="modal-sub"></div>
+        </div>
+        <button id="dayEditorClose" class="icon-btn" data-i18n-title="modal.close" data-i18n-aria="modal.close" title="Close" aria-label="Close">&#10005;</button>
+      </div>
+      <div id="dayEditorBody" class="modal-body"></div>
+      <div class="modal-foot">
+        <button id="dayEditorDone" class="btn primary" data-i18n="modal.done">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

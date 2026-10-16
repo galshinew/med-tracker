@@ -1,0 +1,48 @@
+{
+  "name": "med-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Desktop medication tracker (Electron) with reminders and GitHub sync",
+  "author": "Med Tracker",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "serve": "python -m http.server 8000",
+    "test": "node tests/harness.js",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.medtracker.app",
+    "productName": "Med Tracker",
+    "files": [
+      "index.html",
+      "css/**/*",
+      "js/**/*",
+      "manifest.json",
+      "sw.js",
+      "electron/**/*",
+      "public/**/*"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "public/icons/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}
