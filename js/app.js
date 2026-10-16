@@ -28,7 +28,7 @@ const DATA_VERSION = 1;
 
 function defaultGithub(){ return { owner: "", repo: "", token: "", path: "tracker.json", branch: "main" }; }
 
-const state = { data: {}, settings: {}, config: {} };
+const state = { data: {}, settings: {}, config: {}, updatedAt: "" };
 
 function safeParse(text, fallback){
   try { const o = JSON.parse(text); return (o && typeof o === "object") ? o : fallback; }
@@ -38,6 +38,7 @@ function safeParse(text, fallback){
 function applyStore(raw){
   raw = raw || {};
   state.data = (raw.data && typeof raw.data === "object") ? raw.data : {};
+  state.updatedAt = raw.updatedAt || "";
   const s = raw.settings || {};
   state.settings = {
     reminders: Object.assign({}, DEFAULT_REMINDERS, s.reminders || {}),
@@ -52,8 +53,13 @@ function applyStore(raw){
   };
 }
 
+function hasCreds(){
+  const g = state.config.github || {};
+  return !!(g.owner && g.repo && g.token);
+}
+
 function trackerObject(){
-  return { version: DATA_VERSION, updatedAt: new Date().toISOString(), data: state.data, settings: state.settings };
+  return { version: DATA_VERSION, updatedAt: state.updatedAt, data: state.data, settings: state.settings };
 }
 
 /* Load persisted state. Desktop -> files on disk; browser -> GitHub (async). */
@@ -63,20 +69,26 @@ function loadStore(){
     try { res = desktopBridge.loadStore() || {}; } catch(e){ res = {}; }
     const tracker = safeParse(res.tracker, {});
     const config = safeParse(res.config, {});
-    applyStore({ data: tracker.data, settings: tracker.settings, config: config });
+    applyStore({ data: tracker.data, settings: tracker.settings, config: config, updatedAt: tracker.updatedAt });
     return true;
   }
   applyStore({});
   return false;
 }
 
-/* Persist synced data + settings (tracker.json on desktop, GitHub in browser). */
-function saveStore(){
-  const tracker = trackerObject();
+/* Write the tracker file to disk (desktop only) without pushing to GitHub. */
+function persistLocal(){
   if(desktopBridge && typeof desktopBridge.saveTracker === "function"){
-    try { desktopBridge.saveTracker(JSON.stringify(tracker)); } catch(e){}
+    try { desktopBridge.saveTracker(JSON.stringify(trackerObject())); } catch(e){}
   }
-  if(typeof pushRemote === "function") pushRemote(tracker);
+}
+
+/* Persist synced data + settings, stamping updatedAt, and push to GitHub
+   (both desktop and browser) when credentials are configured. */
+function saveStore(){
+  state.updatedAt = new Date().toISOString();
+  persistLocal();
+  if(typeof pushRemote === "function") pushRemote(trackerObject());
 }
 
 /* Persist device-only config (GitHub credentials + theme). */
@@ -591,8 +603,10 @@ function wire(){
     };
     state.settings.remindersEnabled = !!($("#remEnabled") && $("#remEnabled").checked);
     saveConfigStore();
-    if(!desktopBridge){ writeHashConfig(); loadRemote(); }
-    saveStore();
+    if(!desktopBridge) writeHashConfig();
+    state.updatedAt = new Date().toISOString();
+    persistLocal();
+    if(hasCreds()) syncOnLoad();
     $("#syncStatus").textContent = t("sync.settingsSaved");
     render();
     checkReminders();
@@ -762,37 +776,40 @@ function writeHashConfig(){
   } catch(e){}
 }
 
-let _remoteReady = false;
-async function loadRemote(){
-  if(desktopBridge) return;
-  const g = state.config.github || {};
-  if(!g.owner || !g.repo || !g.token) return;
-  try {
-    const res = await githubGet();
-    if(res && res.content){
-      const obj = JSON.parse(b64decode(res.content));
-      applyStore({ data: obj.data || obj, settings: obj.settings, config: state.config });
-      initLang(state.settings.language);
-      applyLang();
-      applyTheme(state.config.theme, false);
-      loadSettingsUI();
-      syncLangSeg();
-      render();
-    }
-    _remoteReady = true;
-  } catch(e){ _remoteReady = true; }
-}
-
-/* Debounced auto-push of the whole tracker file after any change (browser only). */
+/* Debounced auto-push of the whole tracker file after any change (needs creds). */
 let _pushTimer = null;
 function pushRemote(tracker){
-  if(desktopBridge) return;
-  const g = state.config.github || {};
-  if(!g.owner || !g.repo || !g.token) return;
+  if(!hasCreds()) return;
   try { clearTimeout(_pushTimer); } catch(e){}
   _pushTimer = setTimeout(function(){
     githubPut(JSON.stringify(tracker, null, 2)).catch(function(){});
   }, 800);
+}
+
+/* On startup reconcile with GitHub; the newer of the two files wins ("last edit wins"). */
+async function syncOnLoad(){
+  if(!hasCreds()) return;
+  let remote = null;
+  try {
+    const res = await githubGet();
+    if(res && res.content) remote = JSON.parse(b64decode(res.content));
+  } catch(e){ return; } // 404 (no file yet) or offline
+
+  const localHasData = Object.keys(state.data).length > 0;
+  const remoteTs = (remote && remote.updatedAt) || "";
+  const adoptRemote = remote && (!localHasData || (remoteTs && remoteTs > (state.updatedAt || "")));
+  if(adoptRemote){
+    applyStore({ data: remote.data, settings: remote.settings, config: state.config, updatedAt: remote.updatedAt });
+    initLang(state.settings.language);
+    applyLang();
+    applyTheme(state.config.theme, false);
+    loadSettingsUI();
+    syncLangSeg();
+    render();
+    persistLocal();
+  } else if(localHasData){
+    githubPut(JSON.stringify(trackerObject(), null, 2)).catch(function(){});
+  }
 }
 
 /* ===================== Boot ===================== */
@@ -806,4 +823,4 @@ loadSettingsUI();
 syncLangSeg();
 render();
 positionInk();
-if(!desktopBridge) loadRemote();
+syncOnLoad();
