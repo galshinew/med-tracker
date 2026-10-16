@@ -668,7 +668,11 @@ function wire(){
     } catch(e){ $("#syncStatus").textContent = t("sync.pushError", { msg: e.message }); }
   });
 
-  if(!desktopBridge && "serviceWorker" in navigator){ navigator.serviceWorker.register("./sw.js").catch(function(){}); }
+  if(!desktopBridge && "serviceWorker" in navigator){
+    navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).then(function(reg){
+      try { reg.update(); } catch(e){}
+    }).catch(function(){});
+  }
 
   const langSeg = $("#langSeg");
   if(langSeg) langSeg.addEventListener("click", function(ev){
