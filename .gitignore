@@ -1,5 +1,15 @@
 node_modules/
 release/
+dist/
+*.mp3
+*.log
+npm-debug.log*
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
 npm-debug.log*
 *.log
 .DS_Store
