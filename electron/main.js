@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, shell } = require("electron");
+const path = require("path");
 const fs = require("fs");
 
 app.commandLine.appendSwitch("lang", "en-GB"); // 24-hour clock for times
