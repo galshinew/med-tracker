@@ -1,5 +1,5 @@
-const CACHE = "meds-v6";
-const ASSETS = ["./", "./index.html", "./css/style.css", "./js/i18n.js", "./js/preboot.js", "./js/app.js", "./manifest.json"];
+const CACHE = "meds-v7";
+const ASSETS = ["./", "./index.html", "./css/style.css", "./js/i18n.js", "./js/preboot.js", "./js/app.js", "./manifest.json", "./public/audio/reminder.mp3"];
 
 self.addEventListener("install", e => {
   e.waitUntil((async () => {

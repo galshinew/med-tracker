@@ -522,6 +522,36 @@ function renderDayEditor(key){
 /* ===================== Reminders ===================== */
 function reminderKeyForEntry(e){ return e.slot; }
 
+/* Reminder sound (bundled mp3). Played when a dose reminder fires. */
+const REMINDER_SOUND = "./public/audio/reminder.mp3";
+let _sound = null;
+function reminderAudio(){
+  if(!_sound){ try { _sound = new Audio(REMINDER_SOUND); _sound.preload = "auto"; } catch(e){ _sound = null; } }
+  return _sound;
+}
+/* Unlock playback during a user gesture so the browser allows later autoplay. */
+function primeSound(){
+  const a = reminderAudio();
+  if(!a) return;
+  try {
+    a.volume = 0;
+    const p = a.play();
+    const done = function(){ try { a.pause(); a.currentTime = 0; a.volume = 1; } catch(e){} };
+    if(p && p.then) p.then(done).catch(function(){ try { a.volume = 1; } catch(e){} });
+    else done();
+  } catch(e){}
+}
+function playReminderSound(){
+  try {
+    const a = reminderAudio();
+    if(!a) return;
+    a.volume = 1;
+    try { a.currentTime = 0; } catch(e){}
+    const p = a.play();
+    if(p && p.catch) p.catch(function(){});
+  } catch(e){}
+}
+
 /* In-memory only (no browser storage): keys already shown this session. */
 const _notified = {};
 
@@ -529,7 +559,6 @@ function checkReminders(){
   if(!state.settings.remindersEnabled) return;
   const canNotify = !!(desktopBridge && desktopBridge.notify) ||
     (typeof Notification !== "undefined" && Notification.permission === "granted");
-  if(!canNotify) return;
   const now = new Date();
   const hhmm = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
   const key = todayKey(now);
@@ -542,10 +571,13 @@ function checkReminders(){
     const nkey = "notif:" + key + ":" + e.id;
     if(_notified[nkey]) continue;
     if(hhmm >= rem){
-      const title = t("notif.title", { med: displayMed(e.med), slot: slotLabel(e) });
-      const body = tp("notif.body", e.dose);
-      if(desktopBridge && desktopBridge.notify){ desktopBridge.notify(title, body); }
-      else { try { new Notification(title, { body: body, tag: nkey }); } catch(err){} }
+      playReminderSound();
+      if(canNotify){
+        const title = t("notif.title", { med: displayMed(e.med), slot: slotLabel(e) });
+        const body = tp("notif.body", e.dose);
+        if(desktopBridge && desktopBridge.notify){ desktopBridge.notify(title, body); }
+        else { try { new Notification(title, { body: body, tag: nkey }); } catch(err){} }
+      }
       _notified[nkey] = 1;
     }
   }
@@ -555,6 +587,14 @@ function checkReminders(){
 function wire(){
   const themeBtn = $("#btnTheme");
   if(themeBtn) themeBtn.addEventListener("click", toggleTheme);
+
+  /* Unlock the reminder sound on the first user interaction (browser autoplay policy). */
+  if(typeof document !== "undefined" && document.addEventListener){
+    const _prime = function(){ primeSound(); document.removeEventListener("click", _prime); document.removeEventListener("touchstart", _prime); document.removeEventListener("keydown", _prime); };
+    document.addEventListener("click", _prime);
+    document.addEventListener("touchstart", _prime);
+    document.addEventListener("keydown", _prime);
+  }
 
   document.querySelectorAll(".pivot-item").forEach(function(b){
     b.addEventListener("click", function(){ switchTab(b.getAttribute("data-tab")); });
@@ -623,6 +663,7 @@ function wire(){
 
   const enableBtn = $("#btnEnableNotif");
   if(enableBtn) enableBtn.addEventListener("click", async function(){
+    primeSound();
     if(desktopBridge && desktopBridge.notify){
       $("#syncStatus").textContent = t("sync.notifDesktop");
       if($("#remEnabled")){ $("#remEnabled").checked = true; state.settings.remindersEnabled = true; saveStore(); checkReminders(); }
@@ -688,6 +729,13 @@ function wire(){
   });
 
   if(typeof window !== "undefined" && window.addEventListener) window.addEventListener("resize", positionInk);
+
+  /* Unlock reminder audio on the first user gesture (needed by browser autoplay rules). */
+  if(typeof document !== "undefined" && document.addEventListener){
+    const prime = function(){ primeSound(); document.removeEventListener("click", prime); document.removeEventListener("touchstart", prime); };
+    document.addEventListener("click", prime);
+    document.addEventListener("touchstart", prime);
+  }
 
   syncLangSeg();
   checkReminders();

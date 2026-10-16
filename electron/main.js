@@ -3,6 +3,7 @@ const path = require("path");
 const fs = require("fs");
 
 app.commandLine.appendSwitch("lang", "en-GB"); // 24-hour clock for times
+app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required"); // reminder sound may autoplay
 
 let mainWindow = null;
 
