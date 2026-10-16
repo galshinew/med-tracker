@@ -35,4 +35,11 @@
   root.setAttribute("data-theme", theme);
   if (typeof initLang === "function") { try { initLang(lang); } catch (e) {} }
   if (typeof applyLang === "function") { try { applyLang(); } catch (e) {} }
+
+  /* Safety net: never leave the app hidden if app.js fails to load or is a
+     stale cached copy. app.js normally removes this class as soon as it boots. */
+  function reveal(){ try { document.documentElement.classList.remove("booting"); } catch (e) {} }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", reveal);
+  else reveal();
+  setTimeout(reveal, 4000);
 })();

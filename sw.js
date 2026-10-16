@@ -1,8 +1,13 @@
-const CACHE = "meds-v5";
+const CACHE = "meds-v6";
 const ASSETS = ["./", "./index.html", "./css/style.css", "./js/i18n.js", "./js/preboot.js", "./js/app.js", "./manifest.json"];
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  e.waitUntil((async () => {
+    const cache = await caches.open(CACHE);
+    await Promise.all(ASSETS.map(async (a) => {
+      try { const res = await fetch(a, { cache: "no-store" }); await cache.put(a, res); } catch (err) {}
+    }));
+  })());
   self.skipWaiting();
 });
 
@@ -21,10 +26,11 @@ self.addEventListener("fetch", e => {
   const req = e.request;
   const url = new URL(req.url);
   if (req.method !== "GET" || url.origin !== self.location.origin) return; // pass API/other through to network
+  // Network-first, bypassing the browser HTTP cache, then fall back to cache offline.
   e.respondWith(
-    fetch(req).then(res => {
+    fetch(req, { cache: "no-store" }).then(res => {
       const copy = res.clone();
-      caches.open(CACHE).then(c => c.put(req, copy));
+      caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
       return res;
     }).catch(() => caches.match(req))
   );
