@@ -31,8 +31,11 @@ function defaultGithub(){ return { owner: "", repo: "", token: "", path: "tracke
 const state = { data: {}, settings: {}, config: {}, updatedAt: "" };
 
 function safeParse(text, fallback){
-  try { const o = JSON.parse(text); return (o && typeof o === "object") ? o : fallback; }
-  catch(e){ return fallback; }
+  try {
+    const s = (typeof text === "string") ? text.replace(/^\uFEFF/, "") : text;
+    const o = JSON.parse(s);
+    return (o && typeof o === "object") ? o : fallback;
+  } catch(e){ return fallback; }
 }
 
 function applyStore(raw){
@@ -720,7 +723,7 @@ async function githubGet(){
   const { owner, repo, token, path, branch } = state.config.github;
   if(!owner || !repo || !token) throw new Error(t("err.missingGithub"));
   const url = "https://api.github.com/repos/" + owner + "/" + repo + "/contents/" + encodeURIComponent(path) + "?ref=" + encodeURIComponent(branch);
-  const r = await fetch(url, { headers: { "Authorization": "token " + token, "Accept": "application/vnd.github.v3+json", "User-Agent": "med-tracker" } });
+  const r = await fetch(url, { cache: "no-store", headers: { "Authorization": "token " + token, "Accept": "application/vnd.github.v3+json", "User-Agent": "med-tracker" } });
   if(!r.ok) throw new Error(r.status + " " + r.statusText);
   return r.json();
 }
@@ -735,7 +738,7 @@ async function githubPut(content){
     { message: "Update tracker.json " + new Date().toISOString(), content: toB64(content), branch: branch },
     sha ? { sha: sha } : {}
   );
-  const r = await fetch(url, { method: "PUT", headers: { "Authorization": "token " + token, "Accept": "application/vnd.github.v3+json", "Content-Type": "application/json", "User-Agent": "med-tracker" }, body: JSON.stringify(body) });
+  const r = await fetch(url, { method: "PUT", cache: "no-store", headers: { "Authorization": "token " + token, "Accept": "application/vnd.github.v3+json", "Content-Type": "application/json", "User-Agent": "med-tracker" }, body: JSON.stringify(body) });
   if(!r.ok){ const txt = await r.text(); throw new Error(r.status + " " + r.statusText + " " + txt); }
   return r.json();
 }
@@ -807,7 +810,7 @@ async function syncOnLoad(){
     syncLangSeg();
     render();
     persistLocal();
-  } else if(localHasData){
+  } else if(localHasData && (!remote || (state.updatedAt || "") > remoteTs)){
     githubPut(JSON.stringify(trackerObject(), null, 2)).catch(function(){});
   }
 }
