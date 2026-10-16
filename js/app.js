@@ -801,7 +801,7 @@ async function pollRemote(){
     if(res && res.content){
       const remote = JSON.parse(b64decode(res.content));
       const remoteTs = (remote && remote.updatedAt) || "";
-      if(remoteTs && remoteTs > (state.updatedAt || "")){
+      if(remote && remote.data && remoteTs && remoteTs > (state.updatedAt || "")){
         applyStore({ data: remote.data, settings: remote.settings, config: state.config, updatedAt: remote.updatedAt });
         initLang(state.settings.language);
         applyLang();
@@ -819,7 +819,7 @@ async function pollRemote(){
 
 function startPolling(){
   if(_pollTimer || !hasCreds()) return;
-  _pollTimer = setInterval(pollRemote, 10000);
+  _pollTimer = setInterval(pollRemote, 5000);
   if(typeof document !== "undefined" && document.addEventListener){
     document.addEventListener("visibilitychange", function(){ if(!document.hidden) pollRemote(); });
   }
