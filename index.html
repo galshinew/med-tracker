@@ -141,6 +141,22 @@
     </div>
   </div>
 
+  <div id="reminderAlert" class="modal-overlay reminder-overlay" hidden>
+    <div class="modal reminder-modal" role="alertdialog" aria-modal="true" aria-labelledby="reminderTitle">
+      <div class="modal-head">
+        <div>
+          <div id="reminderTitle" class="modal-title" data-i18n="rem.alertTitle">Reminder</div>
+          <div class="modal-sub" data-i18n="rem.alertSub">Time to take your medicine</div>
+        </div>
+      </div>
+      <div id="reminderList" class="modal-body"></div>
+      <div class="modal-foot reminder-foot">
+        <button id="raStop" type="button" class="btn" data-i18n="rem.stop">Stop sound</button>
+        <button id="raTaken" type="button" class="btn primary" data-i18n="rem.markTaken">Mark as taken</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/app.js"></script>
 </body>
 </html>

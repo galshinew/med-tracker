@@ -524,6 +524,21 @@ input { font-family: inherit; }
 .modal-body .med-box:last-child { margin-bottom: 0; }
 .modal-foot { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; }
 
+/* ===== Reminder alert popup ===== */
+.reminder-overlay { z-index: 60; }
+.reminder-modal { max-width: 360px; border-color: var(--accent); animation: remPulse 1.6s ease-in-out infinite; }
+@keyframes remPulse {
+  0%, 100% { box-shadow: 0 20px 60px rgba(0, 0, 0, .35), 0 0 0 0 rgba(59, 130, 246, .45); }
+  50% { box-shadow: 0 20px 60px rgba(0, 0, 0, .35), 0 0 0 14px rgba(59, 130, 246, 0); }
+}
+.reminder-modal .modal-body { padding: 6px 16px; }
+.reminder-item { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+.reminder-item:last-child { border-bottom: 0; }
+.ri-med { font-weight: 700; }
+.ri-dose { color: var(--text-3); font-size: 13px; }
+.ri-slot { margin-inline-start: auto; color: var(--text-3); font-size: 12.5px; }
+.reminder-foot { justify-content: space-between; gap: 10px; }
+
 /* ===== Stats ===== */
 .stats { display: flex; gap: 8px; flex-wrap: wrap; padding: 13px; }
 .stats .chip {

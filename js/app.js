@@ -546,9 +546,18 @@ function playReminderSound(){
     const a = reminderAudio();
     if(!a) return;
     a.volume = 1;
+    a.loop = true;
     try { a.currentTime = 0; } catch(e){}
     const p = a.play();
     if(p && p.catch) p.catch(function(){});
+  } catch(e){}
+}
+function stopReminderSound(){
+  try {
+    const a = reminderAudio();
+    if(!a) return;
+    a.pause();
+    try { a.currentTime = 0; } catch(e){}
   } catch(e){}
 }
 
@@ -563,6 +572,7 @@ function checkReminders(){
   const hhmm = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
   const key = todayKey(now);
   const entries = getEntriesForDay(now);
+  const fired = [];
   for(const e of entries){
     const rem = reminderTimeFor(e);
     if(!rem) continue;
@@ -574,16 +584,52 @@ function checkReminders(){
     const nkey = "notif:" + key + ":" + e.id + ":" + rem;
     if(_notified[nkey]) continue;
     if(hhmm >= rem){
-      playReminderSound();
+      _notified[nkey] = 1;
+      fired.push(Object.assign({}, e));
       if(canNotify){
         const title = t("notif.title", { med: displayMed(e.med), slot: slotLabel(e) });
         const body = tp("notif.body", e.dose);
         if(desktopBridge && desktopBridge.notify){ desktopBridge.notify(title, body); }
         else { try { new Notification(title, { body: body, tag: nkey }); } catch(err){} }
       }
-      _notified[nkey] = 1;
     }
   }
+  if(fired.length) showReminderAlert(fired);
+}
+
+/* ===================== Reminder popup ===================== */
+let _alertEntries = [];
+
+function showReminderAlert(entries){
+  _alertEntries = entries || [];
+  renderReminderAlert();
+  const ov = $("#reminderAlert");
+  if(ov){ ov.hidden = false; ov.classList.add("open"); }
+  playReminderSound();
+}
+
+function renderReminderAlert(){
+  const box = $("#reminderList");
+  if(!box) return;
+  box.innerHTML = _alertEntries.map(function(e){
+    return '<div class="reminder-item">' +
+      '<span class="ri-med">' + displayMed(e.med) + '</span>' +
+      '<span class="ri-dose">' + tp("pill", e.dose) + '</span>' +
+      '<span class="ri-slot">' + slotLabel(e) + '</span>' +
+      '</div>';
+  }).join("");
+}
+
+function hideReminderAlert(){
+  stopReminderSound();
+  _alertEntries = [];
+  const ov = $("#reminderAlert");
+  if(ov){ ov.hidden = true; ov.classList.remove("open"); }
+}
+
+function acknowledgeReminders(){
+  _alertEntries.slice().forEach(function(e){ setTaken(e.key, e.id, true); });
+  hideReminderAlert();
 }
 
 /* ===================== Wiring ===================== */
@@ -602,6 +648,13 @@ function wire(){
   document.querySelectorAll(".pivot-item").forEach(function(b){
     b.addEventListener("click", function(){ switchTab(b.getAttribute("data-tab")); });
   });
+
+  const raStop = $("#raStop");
+  if(raStop) raStop.addEventListener("click", hideReminderAlert);
+  const raTaken = $("#raTaken");
+  if(raTaken) raTaken.addEventListener("click", acknowledgeReminders);
+  const raOverlay = $("#reminderAlert");
+  if(raOverlay) raOverlay.addEventListener("click", function(ev){ if(ev.target === raOverlay) hideReminderAlert(); });
 
   const list = $("#scheduleList");
   if(list) list.addEventListener("click", function(ev){
@@ -752,6 +805,7 @@ function onLangChange(){
   saveStore();
   syncLangSeg();
   loadSettingsUI();
+  if(_alertEntries.length) renderReminderAlert();
   render();
 }
 

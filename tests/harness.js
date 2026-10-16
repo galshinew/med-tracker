@@ -241,6 +241,9 @@ assert(t('nav.today') === 'Today', 'English restored');
   assert(notifs === 0, 'no reminder before the set time');
   withClock(20, 0, () => checkReminders());
   assert(notifs === 2, 'reminder fires for both due doses at the set time');
+  assert(_alertEntries.length === 2, 'reminder popup lists the due doses');
+  assert(getEl('#reminderList').innerHTML.includes('Madison'), 'popup shows the med name');
+  assert(getEl('#reminderAlert').hidden === false, 'popup overlay is shown');
 
   state.settings.reminders = { morning: '22:00', evening: '22:00', sunday: '22:00' };
   withClock(21, 0, () => checkReminders());
@@ -255,6 +258,11 @@ assert(t('nav.today') === 'Today', 'English restored');
   withClock(23, 30, () => checkReminders());
   assert(notifs === 5, 'no reminder for an already-taken dose');
   setTaken('2026-09-17', 'm-am', false);
+
+  acknowledgeReminders();
+  assert(takenFor('2026-09-17', 'm-pm') === true, 'acknowledge marks the dose taken');
+  assert(getEl('#reminderAlert').hidden === true, 'acknowledge closes the popup');
+  setTaken('2026-09-17', 'm-pm', false);
   state.settings.remindersEnabled = false;
 })();
 

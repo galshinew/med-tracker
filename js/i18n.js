@@ -91,6 +91,11 @@ const I18N = {
     "notif.body.one": "Take {n} pill",
     "notif.body.other": "Take {n} pills",
 
+    "rem.alertTitle": "Reminder",
+    "rem.alertSub": "Time to take your medicine",
+    "rem.stop": "Stop sound",
+    "rem.markTaken": "Mark as taken",
+
     "sync.settingsSaved": "Settings saved.",
     "sync.testing": "Testing connection...",
     "sync.connectionOk": "Connection OK \u2014 file found.",
@@ -196,6 +201,11 @@ const I18N = {
     "notif.title": "\u05d6\u05de\u05df \u05dc{med} ({slot})",
     "notif.body.one": "\u05e7\u05d7 {n} \u05db\u05d3\u05d5\u05e8",
     "notif.body.other": "\u05e7\u05d7 {n} \u05db\u05d3\u05d5\u05e8\u05d9\u05dd",
+
+    "rem.alertTitle": "\u05ea\u05d6\u05db\u05d5\u05e8\u05ea",
+    "rem.alertSub": "\u05d6\u05de\u05df \u05dc\u05e7\u05d7\u05ea \u05d0\u05ea \u05d4\u05ea\u05e8\u05d5\u05e4\u05d4",
+    "rem.stop": "\u05e2\u05e6\u05d5\u05e8 \u05e6\u05dc\u05d9\u05dc",
+    "rem.markTaken": "\u05e1\u05de\u05df \u05db\u05e0\u05dc\u05e7\u05d7",
 
     "sync.settingsSaved": "\u05d4\u05d4\u05d2\u05d3\u05e8\u05d5\u05ea \u05e0\u05e9\u05de\u05e8\u05d5.",
     "sync.testing": "\u05d1\u05d5\u05d3\u05e7 \u05d7\u05d9\u05d1\u05d5\u05e8...",
