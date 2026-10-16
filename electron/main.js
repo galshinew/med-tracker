@@ -116,4 +116,11 @@ ipcMain.on("notify", (_event, payload) => {
     }
   });
   n.show();
+  // Draw attention to the app window (without stealing focus) so the reminder popup is seen.
+  if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isFocused()) {
+    try { mainWindow.flashFrame(true); } catch (e) {}
+    const stopFlash = () => { try { mainWindow.flashFrame(false); } catch (e) {} };
+    mainWindow.once("focus", stopFlash);
+    mainWindow.once("show", stopFlash);
+  }
 });

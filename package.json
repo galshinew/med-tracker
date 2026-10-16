@@ -28,6 +28,9 @@
       "electron/**/*",
       "public/**/*"
     ],
+    "asarUnpack": [
+      "public/audio/**"
+    ],
     "directories": {
       "output": "release"
     },
