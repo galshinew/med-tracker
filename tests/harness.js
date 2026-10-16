@@ -222,4 +222,40 @@ assert(getLang() === 'en', 'setLang switches back to English');
 assert(document.documentElement.getAttribute('dir') === 'ltr', 'English sets dir=ltr');
 assert(t('nav.today') === 'Today', 'English restored');
 
+// ===================== reminder timing =====================
+(function(){
+  const RealDate = Date;
+  function withClock(h, m, fn){
+    const t = new RealDate(2026, 8, 17, h, m, 0).getTime(); // Thu 17 Sep 2026
+    global.Date = function(){ if (arguments.length === 0) return new RealDate(t); return new RealDate(...arguments); };
+    global.Date.now = () => t;
+    try { fn(); } finally { global.Date = RealDate; }
+  }
+  let notifs = 0;
+  global.window.electronAPI.notify = () => { notifs++; };
+  state.settings.remindersEnabled = true;
+  state.settings.reminders = { morning: '20:00', evening: '20:00', sunday: '20:00' };
+  for (const k in _notified) delete _notified[k];
+
+  withClock(19, 0, () => checkReminders());
+  assert(notifs === 0, 'no reminder before the set time');
+  withClock(20, 0, () => checkReminders());
+  assert(notifs === 2, 'reminder fires for both due doses at the set time');
+
+  state.settings.reminders = { morning: '22:00', evening: '22:00', sunday: '22:00' };
+  withClock(21, 0, () => checkReminders());
+  assert(notifs === 2, 'moved-later reminder waits for its new time');
+  withClock(22, 0, () => checkReminders());
+  assert(notifs === 4, 'changing the reminder time re-arms it the same day');
+  withClock(22, 0, () => checkReminders());
+  assert(notifs === 4, 'the same reminder time does not fire twice');
+
+  setTaken('2026-09-17', 'm-am', true);
+  state.settings.reminders = { morning: '23:00', evening: '23:00', sunday: '23:00' };
+  withClock(23, 30, () => checkReminders());
+  assert(notifs === 5, 'no reminder for an already-taken dose');
+  setTaken('2026-09-17', 'm-am', false);
+  state.settings.remindersEnabled = false;
+})();
+
 console.log('done');

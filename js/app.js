@@ -564,11 +564,14 @@ function checkReminders(){
   const key = todayKey(now);
   const entries = getEntriesForDay(now);
   for(const e of entries){
-    const rem = (state.settings.reminders || {})[e.slot];
+    const rem = reminderTimeFor(e);
     if(!rem) continue;
     const rec = state.data[key] && state.data[key][e.id];
     if(rec && rec.taken) continue;
-    const nkey = "notif:" + key + ":" + e.id;
+    /* Key by day + entry + the reminder time so that changing the time
+       re-arms the reminder for that day (otherwise the first fire — e.g. the
+       catch-up when the app opens late - would silence the new time). */
+    const nkey = "notif:" + key + ":" + e.id + ":" + rem;
     if(_notified[nkey]) continue;
     if(hhmm >= rem){
       playReminderSound();
