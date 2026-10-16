@@ -101,6 +101,11 @@ function saveConfigStore(){
   }
 }
 
+/* UI-only hints for the web (never medication data): used to avoid a flash of
+   the default language/theme before the GitHub data loads. Desktop uses files. */
+function uiSet(k, v){ try { if(!desktopBridge && typeof localStorage !== "undefined") localStorage.setItem(k, v); } catch(e){} }
+function uiGet(k){ try { if(!desktopBridge && typeof localStorage !== "undefined") return localStorage.getItem(k); } catch(e){} return null; }
+
 /* ===================== Helpers ===================== */
 function $(q){ return document.querySelector(q); }
 function fmtDate(d){
@@ -179,6 +184,7 @@ function getStoredTheme(){ return (state.config && state.config.theme) || "light
 function applyTheme(t, persist){
   try { if(document.documentElement && document.documentElement.setAttribute) document.documentElement.setAttribute("data-theme", t); } catch(e){}
   if(state.config){ state.config.theme = t; if(persist !== false) saveConfigStore(); }
+  uiSet("mt.theme", t);
   const b = $("#btnTheme");
   if(b) b.innerHTML = t === "dark" ? ICONS.sun : ICONS.moon;
 }
@@ -691,11 +697,11 @@ function wire(){
 /* Called by setLang() in i18n.js when the language changes */
 function onLangChange(){
   state.settings.language = getLang();
+  uiSet("mt.lang", getLang());
   saveStore();
   syncLangSeg();
   loadSettingsUI();
   render();
-  positionInk();
 }
 
 function syncLangSeg(){
@@ -809,6 +815,7 @@ async function pollRemote(){
         applyStore({ data: remote.data, settings: remote.settings, config: state.config, updatedAt: remote.updatedAt });
         initLang(state.settings.language);
         applyLang();
+        uiSet("mt.lang", state.settings.language);
         applyTheme(state.config.theme, false);
         loadSettingsUI();
         syncLangSeg();
@@ -848,6 +855,7 @@ async function syncOnLoad(){
     applyStore({ data: remote.data, settings: remote.settings, config: state.config, updatedAt: remote.updatedAt });
     initLang(state.settings.language);
     applyLang();
+    uiSet("mt.lang", state.settings.language);
     applyTheme(state.config.theme, false);
     loadSettingsUI();
     syncLangSeg();
@@ -859,8 +867,13 @@ async function syncOnLoad(){
 }
 
 /* ===================== Boot ===================== */
+setTimeout(function(){ try { document.documentElement.classList.remove("booting"); } catch(e){} }, 2000);
 loadStore();
-if(!desktopBridge) applyHashConfig();
+if(!desktopBridge){
+  applyHashConfig();
+  const hl = uiGet("mt.lang"); if(hl) initLang(hl);
+  const ht = uiGet("mt.theme"); if(ht) state.config.theme = ht;
+}
 initLang(state.settings.language);
 applyLang();
 applyTheme(getStoredTheme(), false);
@@ -869,5 +882,6 @@ loadSettingsUI();
 syncLangSeg();
 render();
 positionInk();
+try { document.documentElement.classList.remove("booting"); } catch(e){}
 syncOnLoad();
 startPolling();

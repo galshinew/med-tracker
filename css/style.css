@@ -61,6 +61,11 @@ html[data-theme="dark"] {
 
 * { box-sizing: border-box; }
 
+/* Hide the app until language/theme are applied, so there is no flash of the
+   default (English) content on startup. Removed by app.js once ready. */
+html.booting { background-color: var(--bg); }
+html.booting body { visibility: hidden; }
+
 html, body { height: 100%; }
 
 body {

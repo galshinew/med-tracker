@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr" data-theme="light">
+<html lang="en" dir="ltr" data-theme="light" class="booting">
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://api.github.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
@@ -8,7 +8,10 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="public/icons/icon-192.png">
   <link rel="stylesheet" href="css/style.css">
+  <noscript><style>html.booting body{visibility:visible}</style></noscript>
   <script src="js/i18n.js"></script>
+  <script src="js/preboot.js"></script>
+  <noscript><style>html.booting body { visibility: visible !important; }</style></noscript>
   <title>Med Tracker</title>
 </head>
 <body>
