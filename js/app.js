@@ -94,10 +94,14 @@ function saveStore(){
   if(typeof pushRemote === "function") pushRemote(trackerObject());
 }
 
-/* Persist device-only config (GitHub credentials + theme). */
+/* Persist device-only config (GitHub credentials + theme).
+   Desktop -> config file; web -> localStorage (so an installed home-screen app
+   keeps syncing, since the URL hash is not opened by the manifest start_url). */
 function saveConfigStore(){
   if(desktopBridge && typeof desktopBridge.saveConfig === "function"){
     try { desktopBridge.saveConfig(JSON.stringify(state.config)); } catch(e){}
+  } else {
+    webCfgSet(state.config.github);
   }
 }
 
@@ -105,6 +109,10 @@ function saveConfigStore(){
    the default language/theme before the GitHub data loads. Desktop uses files. */
 function uiSet(k, v){ try { if(!desktopBridge && typeof localStorage !== "undefined") localStorage.setItem(k, v); } catch(e){} }
 function uiGet(k){ try { if(!desktopBridge && typeof localStorage !== "undefined") return localStorage.getItem(k); } catch(e){} return null; }
+
+/* Device-only GitHub config for the web (never medication data). */
+function webCfgSet(cfg){ try { if(!desktopBridge && typeof localStorage !== "undefined") localStorage.setItem("mt.gh", JSON.stringify(cfg || {})); } catch(e){} }
+function webCfgGet(){ try { if(!desktopBridge && typeof localStorage !== "undefined") return safeParse(localStorage.getItem("mt.gh"), null); } catch(e){} return null; }
 
 /* ===================== Helpers ===================== */
 function $(q){ return document.querySelector(q); }
@@ -984,6 +992,16 @@ loadStore();
 let hadLangHint = false;
 if(!desktopBridge){
   applyHashConfig();
+  /* The URL hash carries the credentials in the phone browser, but the installed
+     home-screen app opens the manifest start_url with no hash. If the URL had no
+     credentials, fall back to the device-saved config; if it did, remember them
+     so sync keeps working on the next launch from the home-screen icon. */
+  if(!hasCreds()){
+    const saved = webCfgGet();
+    if(saved && saved.owner && saved.repo && saved.token) state.config.github = Object.assign(defaultGithub(), saved);
+  } else {
+    saveConfigStore();
+  }
   /* On the web the synced language arrives asynchronously from GitHub. Use the
      last-used hint so the correct language/direction is shown with no English flash. */
   const hl = uiGet("mt.lang"); if(hl && typeof I18N !== "undefined" && I18N[hl]){ state.settings.language = hl; hadLangHint = true; }
