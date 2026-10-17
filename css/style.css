@@ -614,46 +614,48 @@ input { font-family: inherit; }
 .settings-card > .row-sub { margin: -4px 0 11px; }
 
 /* Medications editor */
-.meds-editor { display: flex; flex-direction: column; gap: 8px; margin-bottom: 11px; }
+.meds-editor { display: flex; flex-direction: column; gap: 6px; margin-bottom: 11px; }
 .med-row {
   display: grid;
-  grid-template-columns: 1.6fr 62px 1fr 1fr 92px 30px;
-  gap: 6px;
+  grid-template-columns: minmax(0, 1.7fr) 42px 66px minmax(0, 1fr) 78px 28px;
+  gap: 5px;
   align-items: center;
 }
 .med-row input,
 .med-row select {
   appearance: none;
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
+  border-radius: 7px;
   background: var(--surface-2);
   color: var(--text);
-  padding: 8px 9px;
-  font-size: 13.5px;
+  padding: 6px 7px;
+  font-size: 12.5px;
   font-family: inherit;
   min-width: 0;
   transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
 }
 .med-row input:focus,
 .med-row select:focus { outline: none; border-color: var(--accent); box-shadow: var(--focus); background: var(--surface); }
-.med-row .mr-dose { text-align: center; }
+.med-row .mr-dose { text-align: center; padding-left: 2px; padding-right: 2px; }
 .med-row .mr-day[hidden] { display: block; visibility: hidden; }
 .med-row .mr-remove {
   appearance: none;
   border: 1px solid var(--border-strong);
   background: var(--surface-2);
   color: var(--text-3);
-  border-radius: var(--radius);
-  width: 30px; height: 34px;
-  font-size: 18px; line-height: 1;
+  border-radius: 7px;
+  width: 26px; height: 30px;
+  font-size: 15px; line-height: 1;
   cursor: pointer;
   transition: color .15s ease, border-color .15s ease, background .15s ease;
 }
 .med-row .mr-remove:hover { color: var(--danger, #d33); border-color: currentColor; background: var(--surface); }
 @media (max-width: 560px) {
-  .med-row { grid-template-columns: 1fr 1fr; grid-auto-rows: auto; }
-  .med-row .mr-med { grid-column: 1 / -1; }
-  .med-row .mr-remove { justify-self: end; }
+  .content { padding-left: 8px; padding-right: 8px; }
+  .card { padding-left: 10px; padding-right: 10px; }
+  .med-row { grid-template-columns: minmax(0, 1.6fr) 34px 58px minmax(0, 0.9fr) 72px 24px; gap: 3px; }
+  .med-row input, .med-row select { padding: 5px 5px; font-size: 11.5px; }
+  .med-row .mr-remove { width: 24px; height: 28px; font-size: 14px; }
 }
 
 /* Win11 toggle switch */

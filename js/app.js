@@ -916,8 +916,8 @@ function doseRowHTML(e){
     '<input class="mr-med" type="text" value="' + (e.med || "").replace(/"/g, "&quot;") + '" data-i18n-ph="med.ph" placeholder="' + t("med.ph") + '">' +
     '<input class="mr-dose" type="number" min="1" max="99" value="' + (e.dose || 1) + '" aria-label="' + t("med.pills") + '">' +
     '<select class="mr-type" aria-label="' + t("med.freq") + '">' +
-      '<option value="daily"' + (!isWeekly ? " selected" : "") + '>' + t("med.everyDay") + '</option>' +
-      '<option value="weekly"' + (isWeekly ? " selected" : "") + '>' + t("med.weeklyOn") + '</option>' +
+      '<option value="daily"' + (!isWeekly ? " selected" : "") + '>' + t("common.daily") + '</option>' +
+      '<option value="weekly"' + (isWeekly ? " selected" : "") + '>' + t("common.weekly") + '</option>' +
     '</select>' +
     '<select class="mr-day"' + (isWeekly ? "" : " hidden") + '>' + dayOpts + '</select>' +
     '<input class="mr-time" type="time" value="' + e.time + '" aria-label="' + t("med.time") + '">' +
