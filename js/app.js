@@ -977,11 +977,16 @@ async function syncOnLoad(){
 }
 
 /* ===================== Boot ===================== */
-setTimeout(function(){ try { document.documentElement.classList.remove("booting"); } catch(e){} }, 2000);
+function revealBoot(){ try { document.documentElement.classList.remove("booting"); } catch(e){} }
+/* Absolute safety net: never leave the UI hidden if something hangs/goes wrong. */
+setTimeout(revealBoot, 2500);
 loadStore();
+let hadLangHint = false;
 if(!desktopBridge){
   applyHashConfig();
-  const hl = uiGet("mt.lang"); if(hl) initLang(hl);
+  /* On the web the synced language arrives asynchronously from GitHub. Use the
+     last-used hint so the correct language/direction is shown with no English flash. */
+  const hl = uiGet("mt.lang"); if(hl && typeof I18N !== "undefined" && I18N[hl]){ state.settings.language = hl; hadLangHint = true; }
   const ht = uiGet("mt.theme"); if(ht) state.config.theme = ht;
 }
 initLang(state.settings.language);
@@ -992,6 +997,8 @@ loadSettingsUI();
 syncLangSeg();
 render();
 positionInk();
-try { document.documentElement.classList.remove("booting"); } catch(e){}
-syncOnLoad();
+/* Reveal immediately when the language is already known (desktop, or web with a
+   hint). Otherwise wait for the GitHub data so the first paint is already correct. */
+if(desktopBridge || hadLangHint) revealBoot();
+syncOnLoad().then(revealBoot, revealBoot);
 startPolling();

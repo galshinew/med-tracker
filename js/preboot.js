@@ -23,7 +23,7 @@
         if (m) lang = decodeURIComponent(m[1]);
         else { var l = localStorage.getItem("mt.lang"); if (l) lang = l; }
       } catch (e) {}
-      try { var t = localStorage.getItem("mt.theme"); if (t) theme = th; } catch (e) {}
+      try { var t = localStorage.getItem("mt.theme"); if (t) theme = t; } catch (e) {}
     }
   } catch (e) {}
 
@@ -36,10 +36,9 @@
   if (typeof initLang === "function") { try { initLang(lang); } catch (e) {} }
   if (typeof applyLang === "function") { try { applyLang(); } catch (e) {} }
 
-  /* Safety net: never leave the app hidden if app.js fails to load or is a
-     stale cached copy. app.js normally removes this class as soon as it boots. */
+  /* Safety net: reveal only if app.js never boots (e.g. it failed to load).
+     app.js removes "booting" itself as soon as the correct language is applied,
+     so the page never paints in the wrong language. */
   function reveal(){ try { document.documentElement.classList.remove("booting"); } catch (e) {} }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", reveal);
-  else reveal();
   setTimeout(reveal, 4000);
 })();
