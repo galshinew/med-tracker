@@ -57,6 +57,11 @@ const I18N = {
     "settings.test": "Test connection",
     "settings.pull": "Pull",
     "settings.push": "Push",
+    "settings.unsavedTitle": "Unsaved changes",
+    "settings.unsavedSub": "Save your changes before leaving settings?",
+    "settings.unsavedSave": "Save",
+    "settings.unsavedDiscard": "Discard",
+    "settings.unsavedCancel": "Cancel",
     "settings.ownerPh": "your-github-username",
     "settings.repoPh": "med-tracker-data",
 
@@ -187,6 +192,11 @@ const I18N = {
     "settings.test": "\u05d1\u05d3\u05d9\u05e7\u05ea \u05d7\u05d9\u05d1\u05d5\u05e8",
     "settings.pull": "\u05de\u05e9\u05d9\u05db\u05d4",
     "settings.push": "\u05d3\u05d7\u05d9\u05e4\u05d4",
+    "settings.unsavedTitle": "\u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd \u05e9\u05dc\u05d0 \u05e0\u05e9\u05de\u05e8\u05d5",
+    "settings.unsavedSub": "\u05dc\u05e9\u05de\u05d5\u05e8 \u05d0\u05ea \u05d4\u05e9\u05d9\u05e0\u05d5\u05d9\u05d9\u05dd \u05dc\u05e4\u05e0\u05d9 \u05d4\u05d9\u05e6\u05d9\u05d0\u05d4 \u05de\u05d4\u05d4\u05d2\u05d3\u05e8\u05d5\u05ea?",
+    "settings.unsavedSave": "\u05e9\u05de\u05d5\u05e8",
+    "settings.unsavedDiscard": "\u05d1\u05d8\u05dc",
+    "settings.unsavedCancel": "\u05d1\u05d9\u05d8\u05d5\u05dc",
     "settings.ownerPh": "your-github-username",
     "settings.repoPh": "med-tracker-data",
 

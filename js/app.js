@@ -248,12 +248,36 @@ function currentTheme(){
 function toggleTheme(){ applyTheme(currentTheme() === "dark" ? "light" : "dark"); }
 
 /* ===================== Tabs ===================== */
+let _currentTab = "today";
+let _pendingTab = null;
+let settingsDirty = false;
+
 function switchTab(name){
+  _currentTab = name;
   const items = document.querySelectorAll(".pivot-item");
   items.forEach(b => b.classList.toggle("active", b.getAttribute("data-tab") === name));
   const tabs = document.querySelectorAll(".tab");
   tabs.forEach(s => s.classList.toggle("active", s.id === "tab-" + name));
   positionInk();
+}
+
+/* Leaving Settings with unsaved edits asks to save or discard first. */
+function requestTab(name){
+  if(_currentTab === "settings" && name !== "settings" && settingsDirty){
+    _pendingTab = name;
+    showUnsavedDialog();
+    return;
+  }
+  switchTab(name);
+}
+
+function showUnsavedDialog(){ const d = $("#unsavedDialog"); if(d) d.hidden = false; }
+function hideUnsavedDialog(){ const d = $("#unsavedDialog"); if(d) d.hidden = true; }
+function leaveSettings(){
+  const tgt = _pendingTab;
+  _pendingTab = null;
+  hideUnsavedDialog();
+  if(tgt) switchTab(tgt);
 }
 function positionInk(){
   const active = document.querySelector(".pivot-item.active");
@@ -692,6 +716,29 @@ function wire(){
     });
   });
 
+  /* Track unsaved edits in Settings */
+  const settingsTab = $("#tab-settings");
+  if(settingsTab && settingsTab.addEventListener){
+    const mark = function(){ settingsDirty = true; };
+    settingsTab.addEventListener("input", mark);
+    settingsTab.addEventListener("change", mark);
+  }
+
+  /* Unsaved-changes dialog */
+  const uSave = $("#unsavedSave");
+  if(uSave) uSave.addEventListener("click", function(){
+    hideUnsavedDialog();
+    const b = $("#btnSaveSettings");
+    if(b) b.click(); else settingsDirty = false;
+    leaveSettings();
+  });
+  const uDiscard = $("#unsavedDiscard");
+  if(uDiscard) uDiscard.addEventListener("click", function(){ settingsDirty = false; leaveSettings(); });
+  const uCancel = $("#unsavedCancel");
+  if(uCancel) uCancel.addEventListener("click", function(){ _pendingTab = null; hideUnsavedDialog(); });
+  const uOverlay = $("#unsavedDialog");
+  if(uOverlay) uOverlay.addEventListener("click", function(ev){ if(ev.target === uOverlay){ _pendingTab = null; hideUnsavedDialog(); } });
+
   /* Unlock the reminder sound on the first user interaction (browser autoplay policy). */
   if(typeof document !== "undefined" && document.addEventListener){
     const _prime = function(){ primeSound(); document.removeEventListener("click", _prime); document.removeEventListener("touchstart", _prime); document.removeEventListener("keydown", _prime); };
@@ -701,7 +748,7 @@ function wire(){
   }
 
   document.querySelectorAll(".pivot-item").forEach(function(b){
-    b.addEventListener("click", function(){ switchTab(b.getAttribute("data-tab")); });
+    b.addEventListener("click", function(){ requestTab(b.getAttribute("data-tab")); });
   });
 
   const raStop = $("#raStop");
@@ -743,7 +790,11 @@ function wire(){
   const edOverlay = $("#dayEditor");
   if(edOverlay) edOverlay.addEventListener("click", function(ev){ if(ev.target === edOverlay) closeDayEditor(); });
   if(typeof document !== "undefined" && document.addEventListener){
-    document.addEventListener("keydown", function(ev){ if(ev.key === "Escape" && openDayKey) closeDayEditor(); });
+    document.addEventListener("keydown", function(ev){
+      if(ev.key === "Escape" && openDayKey) closeDayEditor();
+      const ud = $("#unsavedDialog");
+      if(ev.key === "Escape" && ud && ud.hidden === false){ _pendingTab = null; hideUnsavedDialog(); }
+    });
   }
 
   const saveBtn = $("#btnSaveSettings");
@@ -765,6 +816,7 @@ function wire(){
     persistLocal();
     if(hasCreds()){ syncOnLoad(); startPolling(); }
     $("#syncStatus").textContent = t("sync.settingsSaved");
+    settingsDirty = false;
     render();
     checkReminders();
   });
@@ -782,12 +834,12 @@ function wire(){
       const tgt = ev.target;
       if(tgt && tgt.classList && tgt.classList.contains("mr-remove")){
         const row = (tgt.closest ? tgt.closest(".med-row") : tgt.parentNode);
-        if(row && row.parentNode) row.parentNode.removeChild(row);
+        if(row && row.parentNode){ row.parentNode.removeChild(row); settingsDirty = true; }
       }
     });
   }
   const addDoseBtn = $("#addDose");
-  if(addDoseBtn) addDoseBtn.addEventListener("click", addDoseRow);
+  if(addDoseBtn) addDoseBtn.addEventListener("click", function(){ settingsDirty = true; addDoseRow(); });
 
   const enableBtn = $("#btnEnableNotif");
   if(enableBtn) enableBtn.addEventListener("click", async function(){

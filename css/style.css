@@ -630,8 +630,8 @@ input { font-family: inherit; }
 .settings-card > .row-sub { margin: -4px 0 11px; }
 
 /* Standalone save action at the end of Settings */
-.settings-actions { margin-top: 4px; }
-.settings-actions .btn { width: 100%; }
+.settings-actions { margin-top: 4px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.settings-actions .btn { width: auto; padding-left: 22px; padding-right: 22px; }
 .settings-actions .status { text-align: center; }
 
 /* Medications editor */
