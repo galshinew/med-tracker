@@ -302,10 +302,6 @@ function lastTakenLabel(id){
   return t("common.lastTaken", { when: when });
 }
 
-function weeklyFoot(id){
-  return '<div class="med-foot"><span class="med-last">' + ICONS.clock + lastTakenLabel(id) + '</span></div>';
-}
-
 function friendlyMessage(c){
   if(c.total === 0) return t("msg.noDoses");
   if(c.taken === c.total) return t("msg.allDone");
@@ -318,10 +314,10 @@ function doseRow(e, key){
   const taken = takenFor(key, e.id);
   const rec = state.data[key] && state.data[key][e.id];
   const pills = tp("pill", e.dose);
-  const sub = pills + (taken && rec && rec.ts ? " \u00b7 " + t("sub.takenAt", { time: rec.ts }) : " \u00b7 " + reminderTimeFor(e));
+  const sub = pills + (taken && rec && rec.ts ? " \u00b7 " + t("sub.takenAt", { time: rec.ts }) : " \u00b7 " + slotLabel(e));
   return '<div class="dose-row' + (taken ? " taken" : "") + '">' +
     '<div class="dose-info">' +
-      '<div class="dose-slot">' + slotLabel(e) + '</div>' +
+      '<div class="dose-slot">' + displayMed(e.med) + '</div>' +
       '<div class="dose-sub">' + sub + '</div>' +
     '</div>' +
     '<button type="button" class="toggle-taken' + (taken ? " on" : "") + '" data-id="' + e.id + '" data-key="' + key + '" aria-pressed="' + taken + '" title="' + (taken ? t("title.undoTaken") : t("title.markTaken")) + '">' +
@@ -330,16 +326,32 @@ function doseRow(e, key){
   '</div>';
 }
 
-/* A medication box (weekly on top, daily below). Daily boxes can show today's progress. */
-function medBox(med, entries, kind, key, opts){
+/* A read-only row for a weekly med that is not due on the shown day */
+function notDueRow(e, refDate){
+  const next = nextDueDate(e, refDate);
+  const nextLabel = next.toLocaleDateString(localeTag(), { weekday: "long", month: "short", day: "numeric" });
+  return '<div class="dose-row notdue">' +
+    '<div class="dose-info">' +
+      '<div class="dose-slot">' + displayMed(e.med) + '</div>' +
+      '<div class="dose-sub">' + tp("pill", e.dose) + ' \u00b7 ' + t("common.nextDose", { date: nextLabel }) + '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+/* A medication box: one per frequency, holding every dose of that kind. */
+function medBox(entries, kind, key, opts){
   opts = opts || {};
+  const refDate = opts.refDate || dateFromKey(key);
   const icon = kind === "weekly" ? ICONS.calendar : ICONS.pill;
   const tag = kind === "weekly" ? t("common.weekly") : t("common.daily");
-  const rows = entries.map(function(e){ return doseRow(e, key); }).join("");
+  const title = kind === "weekly" ? t("med.weeklyTitle") : t("med.dailyTitle");
+  const rows = entries.map(function(e){
+    return isDueOn(e, refDate) ? doseRow(e, key) : notDueRow(e, refDate);
+  }).join("");
   const kicker = opts.progress ? '<div class="med-date">' + todayLabelHTML() + '</div>' : '';
   let head = '<div class="med-head">' +
       '<div class="med-icon ' + kind + '">' + icon + '</div>' +
-      '<div class="med-name">' + displayMed(med) + '</div>' +
+      '<div class="med-name">' + title + '</div>' +
       '<span class="med-tag ' + kind + '">' + tag + '</span>';
   let foot = '';
   if(opts.progress){
@@ -375,7 +387,9 @@ function medBox(med, entries, kind, key, opts){
         '<span class="med-msg' + (done ? " success" : "") + '">' + friendlyMessage({ total: total, taken: taken, pending: pending }) + '</span>' +
       '</div>';
   } else if(kind === "weekly"){
-    foot = weeklyFoot(entries[0].id);
+    foot = '<div class="med-foot">' + entries.map(function(e){
+      return '<span class="med-last">' + ICONS.clock + lastTakenLabel(e.id) + '</span>';
+    }).join("") + '</div>';
   }
   head += '</div>';
   return '<div class="card med-box ' + kind + (opts.progress ? ' has-progress' : '') + '">' + kicker + head +
@@ -390,40 +404,11 @@ function renderSchedule(){
   const daily = [];
   const weekly = [];
 
-  // all daily medications in a single box
-  const byMed = {};
-  schedule().filter(e => e.type === "daily").forEach(function(e){
-    (byMed[e.med] = byMed[e.med] || []).push(e);
-  });
-  Object.keys(byMed).forEach(function(med){
-    daily.push(medBox(med, byMed[med], "daily", key, { progress: true }));
-  });
-
-  // weekly medications
-  schedule().filter(e => e.type === "weekly").forEach(function(e){
-    if(isDueOn(e, now)){
-      weekly.push(medBox(e.med, [e], "weekly", key));
-    } else {
-      const next = nextDueDate(e, now);
-      const nextLabel = next.toLocaleDateString(localeTag(), { weekday: "long", month: "short", day: "numeric" });
-      const pills = tp("pill", e.dose);
-      weekly.push('<div class="card med-box off">' +
-        '<div class="med-head">' +
-          '<div class="med-icon weekly">' + ICONS.calendar + '</div>' +
-          '<div class="med-name">' + displayMed(e.med) + '</div>' +
-          '<span class="med-tag weekly">' + t("common.weekly") + '</span>' +
-        '</div>' +
-        '<div class="dose-rows">' +
-          '<div class="dose-row notdue">' +
-            '<div class="dose-info">' +
-              '<div class="dose-slot">' + t("common.notDueToday") + '</div>' +
-              '<div class="dose-sub">' + pills + ' \u00b7 ' + t("common.nextDose", { date: nextLabel }) + '</div>' +
-            '</div>' +
-          '</div>' +
-        '</div>' +
-        weeklyFoot(e.id) + '</div>');
-    }
-  });
+  // All daily doses live in a single box, all weekly doses in another.
+  const dailyEntries = schedule().filter(e => e.type === "daily");
+  const weeklyEntries = schedule().filter(e => e.type === "weekly");
+  if(dailyEntries.length) daily.push(medBox(dailyEntries, "daily", key, { progress: true, refDate: now }));
+  if(weeklyEntries.length) weekly.push(medBox(weeklyEntries, "weekly", key, { refDate: now }));
 
   list.innerHTML = daily.concat(weekly).join("");
 }
@@ -564,12 +549,12 @@ function renderDayEditor(key){
   if(title) title.textContent = isToday ? t("common.today") : t("editor.editDay");
   if(sub) sub.textContent = d.toLocaleDateString(localeTag(), { weekday: "long", month: "long", day: "numeric", year: "numeric" });
   const entries = entriesForKey(key);
-  const byMed = {};
-  entries.forEach(function(e){ (byMed[e.med] = byMed[e.med] || []).push(e); });
-  const boxes = Object.keys(byMed).map(function(med){
-    const kind = byMed[med][0].type === "weekly" ? "weekly" : "daily";
-    return medBox(med, byMed[med], kind, key);
-  });
+  const refDate = d;
+  const dailyE = entries.filter(e => e.type === "daily");
+  const weeklyE = entries.filter(e => e.type === "weekly");
+  const boxes = [];
+  if(dailyE.length) boxes.push(medBox(dailyE, "daily", key, { refDate: refDate }));
+  if(weeklyE.length) boxes.push(medBox(weeklyE, "weekly", key, { refDate: refDate }));
   box.innerHTML = boxes.join("");
 }
 

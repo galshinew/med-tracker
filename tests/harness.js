@@ -240,6 +240,25 @@ assert(entriesForKey('2026-01-05').length === 3, 'extra daily dose is due on a M
 assert(entriesForKey('2026-01-04').length === 4, 'extra daily dose is due on a Sunday too');
 state.settings.schedule = savedSchedule;
 
+// ===================== combined frequency boxes =====================
+(function(){
+  const saved = state.settings.schedule;
+  state.settings.schedule = saved.concat([{ id: 'asp', med: 'Aspirin', dose: 1, type: 'daily', day: '', time: '12:00' }]);
+  render();
+  assert(count(scheduleList.innerHTML, /class="card med-box/g) === 2, 'a second daily med stays in the single daily box');
+  assert(count(scheduleList.innerHTML, /med-tag daily/g) === 1, 'still exactly one daily box');
+  assert(scheduleList.innerHTML.includes('Aspirin'), 'the extra daily med is listed in the daily box');
+
+  state.settings.schedule = saved.concat([{ id: 'wk2', med: 'B12', dose: 1, type: 'weekly', day: 'wed', time: '10:00' }]);
+  render();
+  assert(count(scheduleList.innerHTML, /class="card med-box/g) === 2, 'a second weekly med stays in the single weekly box');
+  assert(count(scheduleList.innerHTML, /med-tag weekly/g) === 1, 'still exactly one weekly box');
+  assert(scheduleList.innerHTML.includes('B12'), 'the extra weekly med is listed in the weekly box');
+
+  state.settings.schedule = saved;
+  render();
+})();
+
 // ===================== reminder timing =====================
 (function(){
   const RealDate = Date;
