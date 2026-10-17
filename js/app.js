@@ -681,6 +681,17 @@ function wire(){
   const themeBtn = $("#btnTheme");
   if(themeBtn) themeBtn.addEventListener("click", toggleTheme);
 
+  /* Collapsible settings cards */
+  document.querySelectorAll(".settings-card.collapsible .card-toggle").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      const card = btn.closest(".settings-card");
+      if(!card) return;
+      card.classList.toggle("collapsed");
+      const collapsed = card.classList.contains("collapsed");
+      btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    });
+  });
+
   /* Unlock the reminder sound on the first user interaction (browser autoplay policy). */
   if(typeof document !== "undefined" && document.addEventListener){
     const _prime = function(){ primeSound(); document.removeEventListener("click", _prime); document.removeEventListener("touchstart", _prime); document.removeEventListener("keydown", _prime); };

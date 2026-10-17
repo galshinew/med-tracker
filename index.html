@@ -61,61 +61,76 @@
         </div>
       </section>
 
-      <section class="card settings-card">
-        <h3 data-i18n="settings.meds">Medications & times</h3>
-        <p class="row-sub" data-i18n="settings.medsSub">Add or change your medications and how many times a day or week you take them.</p>
-        <div id="medsEditor" class="meds-editor"></div>
-        <button id="addDose" type="button" class="btn" data-i18n="med.add">Add a dose</button>
+      <section class="card settings-card collapsible collapsed">
+        <button type="button" class="card-toggle" aria-expanded="false">
+          <span class="ct-title" data-i18n="settings.meds">Medications &amp; times</span>
+          <span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></span>
+        </button>
+        <div class="card-body">
+          <p class="row-sub" data-i18n="settings.medsSub">Add or change your medications and how many times a day or week you take them.</p>
+          <div id="medsEditor" class="meds-editor"></div>
+          <button id="addDose" type="button" class="btn" data-i18n="med.add">Add a dose</button>
+        </div>
       </section>
 
-      <section class="card settings-card">
-        <h3 data-i18n="settings.reminders">Reminders</h3>
-        <div class="toggle-row">
-          <div>
-            <div class="row-title" data-i18n="settings.reminders">Reminders</div>
-            <div class="row-sub" data-i18n="settings.remindersSub">Get notified when a dose is due</div>
+      <section class="card settings-card collapsible collapsed">
+        <button type="button" class="card-toggle" aria-expanded="false">
+          <span class="ct-title" data-i18n="settings.reminders">Reminders</span>
+          <span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></span>
+        </button>
+        <div class="card-body">
+          <div class="toggle-row">
+            <div>
+              <div class="row-title" data-i18n="settings.reminders">Reminders</div>
+              <div class="row-sub" data-i18n="settings.remindersSub">Get notified when a dose is due</div>
+            </div>
+            <label class="switch">
+              <input id="remEnabled" type="checkbox">
+              <span class="slider"></span>
+            </label>
           </div>
-          <label class="switch">
-            <input id="remEnabled" type="checkbox">
-            <span class="slider"></span>
-          </label>
+          <button id="btnEnableNotif" class="btn" data-i18n="settings.enableNotif">Enable notifications</button>
         </div>
-        <button id="btnEnableNotif" class="btn" data-i18n="settings.enableNotif">Enable notifications</button>
       </section>
 
-      <section class="card settings-card">
-        <h3 data-i18n="settings.github">GitHub sync</h3>
-        <p class="row-sub" data-i18n="settings.githubSub">Back up and sync your data with your own private GitHub repository.</p>
-        <div class="field">
-          <label for="ghOwner" data-i18n="settings.owner">Repo owner</label>
-          <input id="ghOwner" type="text" data-i18n-ph="settings.ownerPh" placeholder="your-github-username">
-        </div>
-        <div class="field">
-          <label for="ghRepo" data-i18n="settings.repo">Repo name</label>
-          <input id="ghRepo" type="text" data-i18n-ph="settings.repoPh" placeholder="med-tracker-data">
-        </div>
-        <div class="field">
-          <label for="ghToken" data-i18n="settings.token">Access token (classic, repo scope)</label>
-          <input id="ghToken" type="password" placeholder="ghp_...">
-        </div>
-        <div class="grid-2">
+      <section class="card settings-card collapsible collapsed">
+        <button type="button" class="card-toggle" aria-expanded="false">
+          <span class="ct-title" data-i18n="settings.github">GitHub sync</span>
+          <span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></span>
+        </button>
+        <div class="card-body">
+          <p class="row-sub" data-i18n="settings.githubSub">Back up and sync your data with your own private GitHub repository.</p>
           <div class="field">
-            <label for="ghPath" data-i18n="settings.path">File path</label>
-            <input id="ghPath" type="text" value="data/tracker.json">
+            <label for="ghOwner" data-i18n="settings.owner">Repo owner</label>
+            <input id="ghOwner" type="text" data-i18n-ph="settings.ownerPh" placeholder="your-github-username">
           </div>
           <div class="field">
-            <label for="ghBranch" data-i18n="settings.branch">Branch</label>
-            <input id="ghBranch" type="text" value="main">
+            <label for="ghRepo" data-i18n="settings.repo">Repo name</label>
+            <input id="ghRepo" type="text" data-i18n-ph="settings.repoPh" placeholder="med-tracker-data">
           </div>
+          <div class="field">
+            <label for="ghToken" data-i18n="settings.token">Access token (classic, repo scope)</label>
+            <input id="ghToken" type="password" placeholder="ghp_...">
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="ghPath" data-i18n="settings.path">File path</label>
+              <input id="ghPath" type="text" value="data/tracker.json">
+            </div>
+            <div class="field">
+              <label for="ghBranch" data-i18n="settings.branch">Branch</label>
+              <input id="ghBranch" type="text" value="main">
+            </div>
+          </div>
+          <input id="tz" type="hidden" value="">
+          <div class="btn-row">
+            <button id="btnSaveSettings" class="btn primary" data-i18n="settings.save">Save settings</button>
+            <button id="btnTestSync" class="btn" data-i18n="settings.test">Test connection</button>
+            <button id="btnPull" class="btn" data-i18n="settings.pull">Pull</button>
+            <button id="btnPush" class="btn" data-i18n="settings.push">Push</button>
+          </div>
+          <div id="syncStatus" class="status"></div>
         </div>
-        <input id="tz" type="hidden" value="">
-        <div class="btn-row">
-          <button id="btnSaveSettings" class="btn primary" data-i18n="settings.save">Save settings</button>
-          <button id="btnTestSync" class="btn" data-i18n="settings.test">Test connection</button>
-          <button id="btnPull" class="btn" data-i18n="settings.pull">Pull</button>
-          <button id="btnPush" class="btn" data-i18n="settings.push">Push</button>
-        </div>
-        <div id="syncStatus" class="status"></div>
       </section>
     </section>
   </main>

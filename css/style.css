@@ -561,6 +561,22 @@ input { font-family: inherit; }
 .settings-card { margin-bottom: 11px; }
 .settings-card h3 { margin: 0 0 10px; font-size: 15px; font-weight: 600; }
 
+/* Collapsible settings cards */
+.card-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; gap: 10px;
+  background: none; border: 0; padding: 0; margin: 0;
+  font: inherit; color: inherit; cursor: pointer; text-align: start;
+  border-radius: var(--radius);
+}
+.card-toggle .ct-title { font-size: 15px; font-weight: 600; }
+.card-toggle .chev { display: inline-flex; flex: none; color: var(--text-3); transition: transform .18s ease; }
+.collapsible .card-body { margin-top: 10px; }
+.collapsible.collapsed .card-body { display: none; }
+.collapsible.collapsed .card-toggle .chev { transform: rotate(-90deg); }
+.card-toggle:hover .ct-title { color: var(--accent); }
+.card-toggle:focus-visible { outline: none; box-shadow: var(--focus); }
+
 /* Segmented control (language switch) */
 .seg {
   display: inline-flex;
