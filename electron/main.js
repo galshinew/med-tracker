@@ -18,7 +18,7 @@ function storePath(name) {
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 460,
-    height: 780,
+    height: 820,
     minWidth: 380,
     minHeight: 520,
     title: "Med Tracker",
