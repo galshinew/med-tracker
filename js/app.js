@@ -271,8 +271,8 @@ function requestTab(name){
   switchTab(name);
 }
 
-function showUnsavedDialog(){ const d = $("#unsavedDialog"); if(d) d.hidden = false; }
-function hideUnsavedDialog(){ const d = $("#unsavedDialog"); if(d) d.hidden = true; }
+function showUnsavedDialog(){ const d = $("#unsavedDialog"); if(d){ d.hidden = false; d.classList.add("open"); } }
+function hideUnsavedDialog(){ const d = $("#unsavedDialog"); if(d){ d.hidden = true; d.classList.remove("open"); } }
 function leaveSettings(){
   const tgt = _pendingTab;
   _pendingTab = null;
