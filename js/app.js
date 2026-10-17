@@ -1,10 +1,16 @@
 /* ===================== Data / schedule ===================== */
+/* One entry per dose. Users can add/remove entries in Settings.
+   Fields: id (stable key into history), med, dose (pills),
+   type ("daily"|"weekly"), day (weekday for weekly), time ("HH:MM" due time). */
 const DEFAULT_SCHEDULE = [
-  { id: "m-am", med: "Madison", dose: 2, type: "daily", timeOfDay: "morning", slot: "morning" },
-  { id: "m-pm", med: "Madison", dose: 3, type: "daily", timeOfDay: "evening", slot: "evening" },
-  { id: "med-sun", med: "Medsion", dose: 1, type: "weekly", day: "sun", slot: "sunday" }
+  { id: "m-am", med: "Madison", dose: 2, type: "daily", day: "", time: "08:00" },
+  { id: "m-pm", med: "Madison", dose: 3, type: "daily", day: "", time: "20:00" },
+  { id: "med-sun", med: "Medsion", dose: 1, type: "weekly", day: "sun", time: "09:00" }
 ];
 
+const WEEKDAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+/* Kept so old data (reminder slots) migrates into per-entry times. */
 const DEFAULT_REMINDERS = { morning: "08:00", evening: "20:00", sunday: "09:00" };
 
 const ICONS = {
@@ -38,6 +44,42 @@ function safeParse(text, fallback){
   } catch(e){ return fallback; }
 }
 
+function newDoseId(){
+  return "d" + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36);
+}
+
+function normalizeTime(str, fallback){
+  return /^\d{2}:\d{2}$/.test(str) ? str : fallback;
+}
+
+/* Coerce a stored schedule into a clean list; seed times from old reminders. */
+function normalizeSchedule(list, reminders){
+  const r = Object.assign({}, DEFAULT_REMINDERS, reminders || {});
+  const seedTimes = { "m-am": r.morning, "m-pm": r.evening, "med-sun": r.sunday };
+  if(Array.isArray(list) && list.length){
+    return list.filter(Boolean).map(function(e){
+      const type = e.type === "weekly" ? "weekly" : "daily";
+      return {
+        id: e.id ? String(e.id) : newDoseId(),
+        med: String(e.med || "Med").trim() || "Med",
+        dose: Math.max(1, parseInt(e.dose, 10) || 1),
+        type: type,
+        day: type === "weekly" ? (WEEKDAYS.indexOf(e.day) >= 0 ? e.day : "sun") : "",
+        time: normalizeTime(e.time, "08:00")
+      };
+    });
+  }
+  return DEFAULT_SCHEDULE.map(function(e){
+    return { id: e.id, med: e.med, dose: e.dose, type: e.type, day: e.day, time: seedTimes[e.id] || e.time };
+  });
+}
+
+/* The active medication schedule (falls back to the defaults). */
+function schedule(){
+  const s = state.settings && state.settings.schedule;
+  return (Array.isArray(s) && s.length) ? s : DEFAULT_SCHEDULE;
+}
+
 function applyStore(raw){
   raw = raw || {};
   state.data = (raw.data && typeof raw.data === "object") ? raw.data : {};
@@ -45,6 +87,7 @@ function applyStore(raw){
   const s = raw.settings || {};
   state.settings = {
     reminders: Object.assign({}, DEFAULT_REMINDERS, s.reminders || {}),
+    schedule: normalizeSchedule(s.schedule, s.reminders),
     remindersEnabled: !!s.remindersEnabled,
     language: s.language || "en",
     tz: s.tz || ""
@@ -129,17 +172,20 @@ function dateFromKey(key){
 function todayKey(d){ return fmtDate(d || new Date()); }
 function getDayStr(d){ return ["sun","mon","tue","wed","thu","fri","sat"][d.getDay()]; }
 
-function slotLabel(e){ return e.type === "weekly" ? t("common.weekly") : (e.timeOfDay === "morning" ? t("common.morning") : t("common.evening")); }
+function slotLabel(e){
+  if(e.type === "weekly") return t("day." + e.day) + " " + e.time;
+  return e.time;
+}
 function displayMed(med){
   const key = "med." + med;
   return t(key) === key ? med : t(key);
 }
-function reminderTimeFor(e){ return (state.settings.reminders || {})[e.slot] || DEFAULT_REMINDERS[e.slot] || ""; }
+function reminderTimeFor(e){ return e.time || ""; }
 
 function getEntriesForDay(d){
   const key = fmtDate(d);
   const dayStr = getDayStr(d);
-  return DEFAULT_SCHEDULE
+  return schedule()
     .filter(it => it.type === "daily" || (it.type === "weekly" && it.day === dayStr))
     .map(it => Object.assign({}, it, { key }));
 }
@@ -148,7 +194,7 @@ function getEntriesForDay(d){
 function entriesForKey(key){
   const d = dateFromKey(key);
   const dayStr = getDayStr(d);
-  return DEFAULT_SCHEDULE
+  return schedule()
     .filter(it => it.type === "daily" || (it.type === "weekly" && it.day === dayStr))
     .map(it => Object.assign({}, it, { key: key }));
 }
@@ -159,7 +205,7 @@ function isDueOn(e, d){
 
 /* All medications, flagged with whether they are due today (weekly meds always show) */
 function getAllEntriesForDay(d){
-  return DEFAULT_SCHEDULE.map(it => Object.assign({}, it, {
+  return schedule().map(it => Object.assign({}, it, {
     key: fmtDate(d),
     dueToday: isDueOn(it, d)
   }));
@@ -168,7 +214,7 @@ function getAllEntriesForDay(d){
 function nextDueDate(e, d){
   if(e.type !== "weekly") return d;
   const cur = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const target = ["sun","mon","tue","wed","thu","fri","sat"].indexOf(e.day);
+  const target = WEEKDAYS.indexOf(e.day);
   let diff = (target - cur.getDay() + 7) % 7;
   if(diff === 0) diff = 7; /* next occurrence, not today */
   cur.setDate(cur.getDate() + diff);
@@ -346,7 +392,7 @@ function renderSchedule(){
 
   // all daily medications in a single box
   const byMed = {};
-  DEFAULT_SCHEDULE.filter(e => e.type === "daily").forEach(function(e){
+  schedule().filter(e => e.type === "daily").forEach(function(e){
     (byMed[e.med] = byMed[e.med] || []).push(e);
   });
   Object.keys(byMed).forEach(function(med){
@@ -354,7 +400,7 @@ function renderSchedule(){
   });
 
   // weekly medications
-  DEFAULT_SCHEDULE.filter(e => e.type === "weekly").forEach(function(e){
+  schedule().filter(e => e.type === "weekly").forEach(function(e){
     if(isDueOn(e, now)){
       weekly.push(medBox(e.med, [e], "weekly", key));
     } else {
@@ -528,7 +574,7 @@ function renderDayEditor(key){
 }
 
 /* ===================== Reminders ===================== */
-function reminderKeyForEntry(e){ return e.slot; }
+function reminderKeyForEntry(e){ return e.id; }
 
 /* Reminder sound (bundled mp3). Played when a dose reminder fires. */
 const REMINDER_SOUND = "./public/audio/reminder.mp3";
@@ -714,11 +760,8 @@ function wire(){
       branch: $("#ghBranch").value.trim() || "main"
     };
     state.settings.tz = ($("#tz") && $("#tz").value.trim()) || "";
-    state.settings.reminders = {
-      morning: $("#remMorning").value || DEFAULT_REMINDERS.morning,
-      evening: $("#remEvening").value || DEFAULT_REMINDERS.evening,
-      sunday: $("#remSunday").value || DEFAULT_REMINDERS.sunday
-    };
+    const edited = readMedsEditor();
+    if(edited && edited.length) state.settings.schedule = edited;
     state.settings.remindersEnabled = !!($("#remEnabled") && $("#remEnabled").checked);
     saveConfigStore();
     if(!desktopBridge) writeHashConfig();
@@ -729,6 +772,26 @@ function wire(){
     render();
     checkReminders();
   });
+
+  const medsBox = $("#medsEditor");
+  if(medsBox && medsBox.addEventListener){
+    medsBox.addEventListener("change", function(ev){
+      const tgt = ev.target;
+      if(tgt && tgt.classList && tgt.classList.contains("mr-type")){
+        const daySel = tgt.parentNode && tgt.parentNode.querySelector(".mr-day");
+        if(daySel) daySel.hidden = tgt.value !== "weekly";
+      }
+    });
+    medsBox.addEventListener("click", function(ev){
+      const tgt = ev.target;
+      if(tgt && tgt.classList && tgt.classList.contains("mr-remove")){
+        const row = (tgt.closest ? tgt.closest(".med-row") : tgt.parentNode);
+        if(row && row.parentNode) row.parentNode.removeChild(row);
+      }
+    });
+  }
+  const addDoseBtn = $("#addDose");
+  if(addDoseBtn) addDoseBtn.addEventListener("click", addDoseRow);
 
   const enableBtn = $("#btnEnableNotif");
   if(enableBtn) enableBtn.addEventListener("click", async function(){
@@ -839,11 +902,58 @@ function loadSettingsUI(){
   set("#ghPath", g.path || "tracker.json");
   set("#ghBranch", g.branch || "main");
   set("#tz", state.settings.tz || "");
-  const r = state.settings.reminders || DEFAULT_REMINDERS;
-  set("#remMorning", r.morning || DEFAULT_REMINDERS.morning);
-  set("#remEvening", r.evening || DEFAULT_REMINDERS.evening);
-  set("#remSunday", r.sunday || DEFAULT_REMINDERS.sunday);
+  renderMedsEditor();
   if($("#remEnabled")) $("#remEnabled").checked = !!state.settings.remindersEnabled;
+}
+
+/* ===================== Medications editor (Settings) ===================== */
+function doseRowHTML(e){
+  const dayOpts = WEEKDAYS.map(function(d){
+    return '<option value="' + d + '"' + (e.day === d ? " selected" : "") + '>' + t("day." + d) + '</option>';
+  }).join("");
+  const isWeekly = e.type === "weekly";
+  return '<div class="med-row" data-id="' + e.id + '">' +
+    '<input class="mr-med" type="text" value="' + (e.med || "").replace(/"/g, "&quot;") + '" data-i18n-ph="med.ph" placeholder="' + t("med.ph") + '">' +
+    '<input class="mr-dose" type="number" min="1" max="99" value="' + (e.dose || 1) + '" aria-label="' + t("med.pills") + '">' +
+    '<select class="mr-type" aria-label="' + t("med.freq") + '">' +
+      '<option value="daily"' + (!isWeekly ? " selected" : "") + '>' + t("med.everyDay") + '</option>' +
+      '<option value="weekly"' + (isWeekly ? " selected" : "") + '>' + t("med.weeklyOn") + '</option>' +
+    '</select>' +
+    '<select class="mr-day"' + (isWeekly ? "" : " hidden") + '>' + dayOpts + '</select>' +
+    '<input class="mr-time" type="time" value="' + e.time + '" aria-label="' + t("med.time") + '">' +
+    '<button type="button" class="mr-remove" title="' + t("med.remove") + '" aria-label="' + t("med.remove") + '">&times;</button>' +
+  '</div>';
+}
+
+function renderMedsEditor(){
+  const box = $("#medsEditor");
+  if(!box) return;
+  box.innerHTML = schedule().map(doseRowHTML).join("");
+}
+
+function readMedsEditor(){
+  const box = $("#medsEditor");
+  if(!box) return null;
+  const rows = box.querySelectorAll(".med-row");
+  const out = [];
+  rows.forEach(function(row){
+    const type = row.querySelector(".mr-type").value === "weekly" ? "weekly" : "daily";
+    const med = row.querySelector(".mr-med").value.trim() || "Med";
+    const dose = Math.max(1, parseInt(row.querySelector(".mr-dose").value, 10) || 1);
+    const day = type === "weekly" ? row.querySelector(".mr-day").value : "";
+    const time = normalizeTime(row.querySelector(".mr-time").value, "08:00");
+    out.push({ id: row.getAttribute("data-id") || newDoseId(), med: med, dose: dose, type: type, day: day, time: time });
+  });
+  return out;
+}
+
+function addDoseRow(){
+  const box = $("#medsEditor");
+  if(!box) return;
+  const e = { id: newDoseId(), med: "", dose: 1, type: "daily", day: "sun", time: "08:00" };
+  const tmp = document.createElement("div");
+  tmp.innerHTML = doseRowHTML(e);
+  box.appendChild(tmp.firstChild);
 }
 
 /* ===================== GitHub sync ===================== */

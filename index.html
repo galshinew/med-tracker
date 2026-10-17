@@ -62,6 +62,13 @@
       </section>
 
       <section class="card settings-card">
+        <h3 data-i18n="settings.meds">Medications & times</h3>
+        <p class="row-sub" data-i18n="settings.medsSub">Add or change your medications and how many times a day or week you take them.</p>
+        <div id="medsEditor" class="meds-editor"></div>
+        <button id="addDose" type="button" class="btn" data-i18n="med.add">Add a dose</button>
+      </section>
+
+      <section class="card settings-card">
         <h3 data-i18n="settings.reminders">Reminders</h3>
         <div class="toggle-row">
           <div>
@@ -72,18 +79,6 @@
             <input id="remEnabled" type="checkbox">
             <span class="slider"></span>
           </label>
-        </div>
-        <div class="field">
-          <label for="remMorning" data-i18n="settings.morning">Morning</label>
-          <input id="remMorning" type="time" value="08:00">
-        </div>
-        <div class="field">
-          <label for="remEvening" data-i18n="settings.evening">Evening</label>
-          <input id="remEvening" type="time" value="20:00">
-        </div>
-        <div class="field">
-          <label for="remSunday" data-i18n="settings.sunday">Sunday (Medsion)</label>
-          <input id="remSunday" type="time" value="09:00">
         </div>
         <button id="btnEnableNotif" class="btn" data-i18n="settings.enableNotif">Enable notifications</button>
       </section>

@@ -222,6 +222,24 @@ assert(getLang() === 'en', 'setLang switches back to English');
 assert(document.documentElement.getAttribute('dir') === 'ltr', 'English sets dir=ltr');
 assert(t('nav.today') === 'Today', 'English restored');
 
+// ===================== configurable schedule =====================
+assert(schedule().length === 3, 'default schedule has 3 doses');
+assert(schedule().find(e => e.id === 'm-am').time === '08:00', 'migration seeds m-am time from reminder morning');
+assert(schedule().find(e => e.id === 'med-sun').type === 'weekly', 'weekly dose kept from defaults');
+
+const custom = normalizeSchedule([{ id: 'x1', med: 'Aspirin', dose: '2', type: 'weekly', day: 'wed', time: '07:30' }]);
+assert(custom.length === 1 && custom[0].med === 'Aspirin' && custom[0].dose === 2, 'normalizeSchedule coerces a custom dose');
+assert(custom[0].type === 'weekly' && custom[0].day === 'wed' && custom[0].time === '07:30', 'normalizeSchedule keeps weekly day/time');
+
+const bad = normalizeSchedule([{ med: '', dose: 0, type: 'weird', time: 'zz' }]);
+assert(bad[0].med === 'Med' && bad[0].dose === 1 && bad[0].type === 'daily' && bad[0].time === '08:00', 'normalizeSchedule falls back on bad values');
+
+const savedSchedule = state.settings.schedule;
+state.settings.schedule = savedSchedule.concat([{ id: 'extra', med: 'Aspirin', dose: 1, type: 'daily', day: '', time: '12:00' }]);
+assert(entriesForKey('2026-01-05').length === 3, 'extra daily dose is due on a Monday');
+assert(entriesForKey('2026-01-04').length === 4, 'extra daily dose is due on a Sunday too');
+state.settings.schedule = savedSchedule;
+
 // ===================== reminder timing =====================
 (function(){
   const RealDate = Date;
@@ -234,7 +252,8 @@ assert(t('nav.today') === 'Today', 'English restored');
   let notifs = 0;
   global.window.electronAPI.notify = () => { notifs++; };
   state.settings.remindersEnabled = true;
-  state.settings.reminders = { morning: '20:00', evening: '20:00', sunday: '20:00' };
+  const setTimes = (time) => { state.settings.schedule = state.settings.schedule.map(e => Object.assign({}, e, { time: time })); };
+  setTimes('20:00');
   for (const k in _notified) delete _notified[k];
 
   withClock(19, 0, () => checkReminders());
@@ -245,7 +264,7 @@ assert(t('nav.today') === 'Today', 'English restored');
   assert(getEl('#reminderList').innerHTML.includes('Madison'), 'popup shows the med name');
   assert(getEl('#reminderAlert').hidden === false, 'popup overlay is shown');
 
-  state.settings.reminders = { morning: '22:00', evening: '22:00', sunday: '22:00' };
+  setTimes('22:00');
   withClock(21, 0, () => checkReminders());
   assert(notifs === 2, 'moved-later reminder waits for its new time');
   withClock(22, 0, () => checkReminders());
@@ -254,7 +273,7 @@ assert(t('nav.today') === 'Today', 'English restored');
   assert(notifs === 4, 'the same reminder time does not fire twice');
 
   setTaken('2026-09-17', 'm-am', true);
-  state.settings.reminders = { morning: '23:00', evening: '23:00', sunday: '23:00' };
+  setTimes('23:00');
   withClock(23, 30, () => checkReminders());
   assert(notifs === 5, 'no reminder for an already-taken dose');
   setTaken('2026-09-17', 'm-am', false);
@@ -267,12 +286,12 @@ assert(t('nav.today') === 'Today', 'English restored');
   // Pressing Stop stays quiet for that dose the rest of the day
   for (const k in _notified) delete _notified[k];
   for (const k in _dismissed) delete _dismissed[k];
-  state.settings.reminders = { morning: '08:00', evening: '08:00', sunday: '08:00' };
+  setTimes('08:00');
   const before = notifs;
   withClock(8, 0, () => checkReminders());
   assert(notifs === before + 2, 'fires at 08:00');
   hideReminderAlert(); // press Stop
-  state.settings.reminders = { morning: '09:00', evening: '09:00', sunday: '09:00' };
+  setTimes('09:00');
   withClock(9, 0, () => checkReminders());
   assert(notifs === before + 2, 'after Stop it never re-fires that day');
   state.settings.remindersEnabled = false;
