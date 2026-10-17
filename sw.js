@@ -1,4 +1,4 @@
-const CACHE = "meds-v18";
+const CACHE = "meds-v19";
 const ASSETS = ["./", "./index.html", "./css/style.css", "./js/i18n.js", "./js/preboot.js", "./js/app.js", "./manifest.json", "./public/audio/reminder.mp3"];
 
 self.addEventListener("install", e => {

@@ -709,6 +709,10 @@ html[dir="rtl"] .switch input:checked + .slider::before { transform: translate(-
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border: 3px solid transparent; background-clip: padding-box; border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-3); background-clip: padding-box; }
 
+/* Desktop app: no visible scrollbars (scrolling still works) */
+html.is-electron { scrollbar-width: none; }
+html.is-electron ::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
 @media (max-width: 520px) {
   .grid-2 { grid-template-columns: 1fr; }
   .hist-table { font-size: 12.5px; }

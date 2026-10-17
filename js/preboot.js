@@ -28,6 +28,7 @@
   } catch (e) {}
 
   var root = document.documentElement;
+  if (window.electronAPI) root.classList.add("is-electron");
   if (lang !== "he") lang = "en";
   if (theme !== "dark") theme = "light";
   root.setAttribute("lang", lang);
